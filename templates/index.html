@@ -176,18 +176,17 @@
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
+        let estaEnviando = false; // Evita envíos dobles
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'es-ES';
-            recognition.interimResults = true; // Permite ver resultados parciales
+            recognition.interimResults = false; // Solo toma el resultado final definitivo
             recognition.maxAlternatives = 1;
 
             recognition.onstart = function() {
-                // Interrumpir cualquier audio en reproducción al empezar a hablar
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
-                
                 micBtn.classList.add('listening');
                 statusText.innerText = "Escuchando orden...";
                 face.className = "face-container thinking";
@@ -196,13 +195,7 @@
             recognition.onresult = function(event) {
                 const textoTranscrito = event.results[0][0].transcript;
                 userInput.value = textoTranscrito;
-            };
-
-            recognition.onspeechend = function() {
-                recognition.stop();
-                if (userInput.value.trim() !== "") {
-                    enviarMensaje();
-                }
+                enviarMensaje(); // Envía una sola vez al obtener el resultado final
             };
 
             recognition.onerror = function(event) {
@@ -220,7 +213,6 @@
         }
 
         function activarEscucha() {
-            // Detener voz anterior si está hablando
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
 
@@ -237,9 +229,9 @@
 
         async function enviarMensaje() {
             const mensaje = userInput.value.trim();
-            if (!mensaje) return;
+            if (!mensaje || estaEnviando) return;
 
-            // Cortar voz actual si sigue sonando
+            estaEnviando = true;
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
 
@@ -266,6 +258,8 @@
             } catch (error) {
                 face.className = "face-container";
                 statusText.innerText = "Error de conexión con el servidor.";
+            } finally {
+                estaEnviando = false;
             }
         }
 
