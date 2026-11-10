@@ -167,7 +167,7 @@
         <div class="mouth"></div>
     </div>
 
-    <div id="status-text">Sistemas en línea. Hola, ¿en qué te puedo ayudar?</div>
+    <div id="status-text">Sistemas en línea. ¡Hola, ya tengo voz propia!</div>
 
     <div class="controls">
         <input type="text" id="user-input" placeholder="Escribe algo a Visión..." autocomplete="off">
@@ -175,6 +175,28 @@
     </div>
 
     <script>
+        // Función para sintetizar la voz de Visión en español
+        function hablarEnVoz Alta(texto) {
+            if ('speechSynthesis' in window) {
+                // Cancelar cualquier audio anterior para que no se encime
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(texto);
+                utterance.lang = 'es-ES'; // Idioma español
+                utterance.rate = 1.0;    // Velocidad normal
+                utterance.pitch = 1.0;   // Tono
+
+                // Intentar buscar una voz en español natural si está disponible en el dispositivo
+                const voices = window.speechSynthesis.getVoices();
+                const spanishVoice = voices.find(v => v.lang.startsWith('es'));
+                if (spanishVoice) {
+                    utterance.voice = spanishVoice;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
         async function enviarMensaje() {
             const input = document.getElementById('user-input');
             const statusText = document.getElementById('status-text');
@@ -183,7 +205,7 @@
             const mensaje = input.value.trim();
             if (!mensaje) return;
 
-            // Cambiar a estado "pensando" (ojos amarillos y animación)
+            // Cambiar a estado "pensando"
             face.className = "face-container thinking";
             statusText.innerText = "Pensando...";
             input.value = "";
@@ -194,9 +216,12 @@
                 const data = await response.json();
 
                 if (data.status === "success") {
-                    // Aplicar la emoción devuelta (neutral, happy, etc.)
+                    // Aplicar la emoción devuelta
                     face.className = "face-container " + data.emocion;
                     statusText.innerText = data.respuesta;
+                    
+                    // ¡Hacer que Visión hable la respuesta en voz alta!
+                    hablarEnVozAlta(data.respuesta);
                 } else {
                     face.className = "face-container";
                     statusText.innerText = "Error: " + data.mensaje;
