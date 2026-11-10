@@ -67,7 +67,7 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* --- ESTADOS EMOCIONALES --- */
+        /* ESTADOS EMOCIONALES */
         .thinking .eye {
             transform: scaleY(0.25);
             background-color: #facc15;
@@ -111,12 +111,12 @@
 
         select {
             width: 100%;
-            padding: 8px 12px;
+            padding: 10px;
             border-radius: 8px;
             background-color: #1e293b;
-            color: #94a3b8;
+            color: #f1f5f9;
             border: 1px solid #334155;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             outline: none;
         }
 
@@ -176,7 +176,6 @@
 </head>
 <body>
 
-    <!-- Menú desplegable para elegir la voz -->
     <div class="voice-selector">
         <select id="voiceSelect" onchange="probarVoz()">
             <option value="">Cargando voces del dispositivo...</option>
@@ -201,7 +200,6 @@
     <script>
         let vocesDisponibles = [];
 
-        // Cargar y listar las voces en el selector
         function cargarVoces() {
             if (!('speechSynthesis' in window)) return;
             
@@ -209,23 +207,29 @@
             const select = document.getElementById('voiceSelect');
             select.innerHTML = '';
 
-            // Filtrar preferentemente voces en español, o mostrar todas si hay pocas
-            const vocesFiltradas = vocesDisponibles.filter(v => v.lang.includes('es') || v.lang.includes('en'));
-            const listaUsar = vocesFiltradas.length > 0 ? vocesFiltradas : vocesDisponibles;
-
-            listaUsar.forEach((voice, index) => {
+            if (vocesDisponibles.length === 0) {
                 const option = document.createElement('option');
-                option.value = vocesDisponibles.indexOf(voice); // Guardamos el índice real
+                option.textContent = "Cargando voces...";
+                select.appendChild(option);
+                return;
+            }
+
+            vocesDisponibles.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = index;
                 option.textContent = `${voice.name} (${voice.lang})`;
+                if (voice.lang.startsWith('es')) {
+                    option.selected = true;
+                }
                 select.appendChild(option);
             });
         }
 
-        // Evento para cuando Android/Chrome carga las voces
-        window.speechSynthesis.onvoiceschanged = cargarVoces;
-        setTimeout(cargarVoces, 500); // Por si ya cargaron
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = cargarVoces;
+            setTimeout(cargarVoces, 500);
+        }
 
-        // Probar la voz seleccionada al cambiarla en el menú
         function probarVoz() {
             const select = document.getElementById('voiceSelect');
             const index = select.value;
@@ -233,319 +237,6 @@
 
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance("Hola, esta es mi nueva voz.");
-            utterance.voice = vocesDisponibles[index];
-            utterance.lang = vocesDisponibles[index].lang;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // Hablar con la voz seleccionada en el menú
-        function hablarEnVozAlta(texto) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-
-                const utterance = new SpeechSynthesisUtterance(texto);
-                utterance.rate = 1.1;
-                utterance.pitch = 1.0;
-
-                const select = document.getElementById('voiceSelect');
-                const index = select.value;
-
-                if (index !== "" && vocesDisponibles[index]) {
-                    utterance.voice = vocesDisponibles[index];
-                    utterance.lang = vocesDisponibles[index].lang;
-                } else {
-                    utterance.lang = 'es-ES';
-                }
-
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        async function enviarMensaje() {
-            const input = document.getElementById('user-input');
-            const statusText = document.getElementById('status-text');
-            const face = document.getElementById('face');
-            
-            const mensaje = input.value.trim();
-            if (!mensaje) return;
-
-            face.className = "face-container thinking";
-            statusText.innerText = "Pensando...";
-            input.value = "";
-
-            try {
-                const response = await fetch(`/hablar/${encodeURIComponent(mensaje)}`);
-                const data = await response.json();
-
-                if (data.status === "success") {
-                    face.className = "face-container " + data.emocion;
-                    statusText.innerText = data.respuesta;
-                    hablarEnVozAlta(data.respuesta);
-                } else {
-                    face.className = "face-container";
-                    statusText.innerText = "Error: " + data.mensaje;
-                }
-            } catch (error) {<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visión - Asistente Inteligente</title>
-    <style>
-        body {
-            background-color: #0b0f19;
-            color: #c9d1d9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        /* Contenedor principal de la cara */
-        .face-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-top: auto;
-            margin-bottom: auto;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Ojos del asistente */
-        .eyes {
-            display: flex;
-            gap: 50px;
-            margin-bottom: 35px;
-        }
-
-        .eye {
-            width: 45px;
-            height: 45px;
-            background-color: #38bdf8;
-            border-radius: 50%;
-            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
-            transition: transform 0.3s ease, background-color 0.4s ease, box-shadow 0.4s ease;
-        }
-
-        /* Animación de parpadeo automático */
-        @keyframes blink {
-            0%, 96%, 100% { transform: scaleY(1); }
-            98% { transform: scaleY(0.1); }
-        }
-
-        .face-container:not(.thinking):not(.happy) .eye {
-            animation: blink 4s infinite;
-        }
-
-        /* Boca / Indicador de estado */
-        .mouth {
-            width: 90px;
-            height: 12px;
-            background-color: #38bdf8;
-            border-radius: 6px;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* --- ESTADOS EMOCIONALES --- */
-        .thinking .eye {
-            transform: scaleY(0.25);
-            background-color: #facc15;
-            box-shadow: 0 0 25px rgba(250, 204, 21, 0.7);
-        }
-        .thinking .mouth {
-            width: 35px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #facc15;
-            box-shadow: 0 0 15px rgba(250, 204, 21, 0.5);
-            animation: pulse-mouth 1s infinite alternate;
-        }
-
-        @keyframes pulse-mouth {
-            0% { transform: scale(0.9); }
-            100% { transform: scale(1.1); }
-        }
-
-        .happy .eye {
-            transform: scale(1.15) scaleY(0.9);
-            background-color: #4ade80;
-            box-shadow: 0 0 30px rgba(74, 222, 128, 0.8);
-        }
-        .happy .mouth {
-            width: 110px;
-            height: 24px;
-            border-radius: 0 0 60px 60px;
-            background-color: #4ade80;
-            box-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
-        }
-
-        /* Panel superior de audio/voces */
-        .top-panel {
-            width: 100%;
-            max-width: 450px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: #1e293b;
-            color: #f1f5f9;
-            border: 1px solid #334155;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .load-btn {
-            background-color: #334155;
-            color: #38bdf8;
-            border: 1px solid #475569;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /* Texto de estado inferior */
-        #status-text {
-            margin-top: 15px;
-            font-size: 1.1rem;
-            text-align: center;
-            max-width: 90%;
-            color: #94a3b8;
-            min-height: 50px;
-            line-height: 1.4;
-        }
-
-        /* Controles inferiores */
-        .controls {
-            display: flex;
-            gap: 12px;
-            width: 100%;
-            max-width: 450px;
-            margin-bottom: 5px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 14px 16px;
-            border-radius: 12px;
-            border: 1px solid #1e293b;
-            background-color: #0f172a;
-            color: #f1f5f9;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus {
-            border-color: #38bdf8;
-        }
-
-        button {
-            padding: 14px 22px;
-            border-radius: 12px;
-            border: none;
-            background-color: #0284c7;
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-
-        button:active {
-            background-color: #0369a1;
-            transform: scale(0.97);
-        }
-    </style>
-</head>
-<body>
-
-    <div class="top-panel">
-        <button class="load-btn" onclick="cargarVoces()">🔊 Activar / Cargar Voces del Dispositivo</button>
-        <select id="voiceSelect" onchange="probarVoz()">
-            <option value="">Pulsa el botón de arriba para cargar voces...</option>
-        </select>
-    </div>
-
-    <div class="face-container" id="face">
-        <div class="eyes">
-            <div class="eye"></div>
-            <div class="eye"></div>
-        </div>
-        <div class="mouth"></div>
-    </div>
-
-    <div id="status-text">Sistemas en línea. ¡Activa las voces y háblame!</div>
-
-    <div class="controls">
-        <input type="text" id="user-input" placeholder="Escribe algo a Visión..." autocomplete="off">
-        <button onclick="enviarMensaje()">Enviar</button>
-    </div>
-
-    <script>
-        let vocesDisponibles = [];
-
-        function cargarVoces() {
-            if (!('speechSynthesis' in window)) {
-                alert("Tu navegador no soporta voz.");
-                return;
-            }
-            
-            vocesDisponibles = window.speechSynthesis.getVoices();
-            
-            // Si la lista viene vacía en Android, forzamos un pequeño toque de síntesis vacía para despertarlas
-            if (vocesDisponibles.length === 0) {
-                window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-                vocesDisponibles = window.speechSynthesis.getVoices();
-            }
-
-            const select = document.getElementById('voiceSelect');
-            select.innerHTML = '';
-
-            if (vocesDisponibles.length === 0) {
-                const option = document.createElement('option');
-                option.textContent = "No se detectaron voces. Usa Chrome actualizado.";
-                select.appendChild(option);
-                return;
-            }
-
-            // Priorizar español
-            vocesDisponibles.forEach((voice, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                if (voice.lang.includes('es')) {
-                    option.selected = true; // Seleccionar español por defecto si existe
-                }
-                select.appendChild(option);
-            });
-
-            document.getElementById('status-text').innerText = "¡Voces cargadas con éxito! Ya puedes hablarme.";
-            probarVoz();
-        }
-
-        function probarVoz() {
-            const select = document.getElementById('voiceSelect');
-            const index = select.value;
-            if (index === "" || !vocesDisponibles[index]) return;
-
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance("Hola, soy Visión.");
             utterance.voice = vocesDisponibles[index];
             utterance.lang = vocesDisponibles[index].lang;
             window.speechSynthesis.speak(utterance);
@@ -599,19 +290,6 @@
                 }
             } catch (error) {
                 face.className = "face-container";
-                statusText.innerText = "Error de conexión con el servidor.";
-            }
-        }
-
-        document.getElementById('user-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                enviarMensaje();
-            }
-        });
-    </script>
-</body>
-</html>
-                face.className.("face-container");
                 statusText.innerText = "Error de conexión con el servidor.";
             }
         }
