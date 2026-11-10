@@ -165,7 +165,6 @@
         <button onclick="enviarMensaje()">Enviar</button>
     </div>
 
-    <!-- Reproductor de audio invisible para ElevenLabs -->
     <audio id="audio-player"></audio>
 
     <script>
@@ -175,17 +174,20 @@
         const micBtn = document.getElementById('mic-btn');
         const userInput = document.getElementById('user-input');
 
-        // Configuración del Reconocimiento de Voz del Navegador
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'es-ES';
-            recognition.interimResults = false;
+            recognition.interimResults = true; // Permite ver resultados parciales
             recognition.maxAlternatives = 1;
 
             recognition.onstart = function() {
+                // Interrumpir cualquier audio en reproducción al empezar a hablar
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                
                 micBtn.classList.add('listening');
                 statusText.innerText = "Escuchando orden...";
                 face.className = "face-container thinking";
@@ -194,12 +196,18 @@
             recognition.onresult = function(event) {
                 const textoTranscrito = event.results[0][0].transcript;
                 userInput.value = textoTranscrito;
-                enviarMensaje(); // Envía automáticamente al terminar de hablar
+            };
+
+            recognition.onspeechend = function() {
+                recognition.stop();
+                if (userInput.value.trim() !== "") {
+                    enviarMensaje();
+                }
             };
 
             recognition.onerror = function(event) {
                 console.error("Error de voz:", event.error);
-                statusText.innerText = "No pude escuchar bien. Intenta de nuevo.";
+                statusText.innerText = "No capturé bien el audio. Intenta de nuevo.";
                 face.className = "face-container";
                 micBtn.classList.remove('listening');
             };
@@ -208,10 +216,14 @@
                 micBtn.classList.remove('listening');
             };
         } else {
-            console.warn("El reconocimiento de voz no es compatible con este navegador.");
+            console.warn("El reconocimiento de voz no es compatible.");
         }
 
         function activarEscucha() {
+            // Detener voz anterior si está hablando
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+
             if (recognition) {
                 try {
                     recognition.start();
@@ -226,6 +238,10 @@
         async function enviarMensaje() {
             const mensaje = userInput.value.trim();
             if (!mensaje) return;
+
+            // Cortar voz actual si sigue sonando
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
 
             face.className = "face-container thinking";
             statusText.innerText = "Analizando...";
