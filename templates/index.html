@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Visión - Interfaz</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        /* Contenedor principal de la cara */
+        .face-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: auto;
+            margin-bottom: auto;
+            transition: all 0.3s ease;
+        }
+        /* Ojos del asistente */
+        .eyes {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .eye {
+            width: 40px;
+            height: 40px;
+            background-color: #58a6ff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #58a6ff;
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+        /* Boca / Indicador de estado */
+        .mouth {
+            width: 80px;
+            height: 10px;
+            background-color: #58a6ff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #58a6ff;
+            transition: all 0.3s ease;
+        }
+        /* Estados emocionales (Clases CSS) */
+        .thinking .eye {
+            transform: scaleY(0.3);
+            background-color: #d29922;
+            box-shadow: 0 0 15px #d29922;
+        }
+        .thinking .mouth {
+            width: 30px;
+            border-radius: 50%;
+        }
+        .happy .eye {
+            transform: scale(1.2);
+            background-color: #3fb950;
+            box-shadow: 0 0 20px #3fb950;
+        }
+        .happy .mouth {
+            width: 100px;
+            height: 20px;
+            border-radius: 0 0 50px 50px;
+        }
+        /* Texto de estado inferior */
+        #status-text {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            text-align: center;
+            max-width: 90%;
+            color: #8b949e;
+            min-height: 50px;
+        }
+        /* Controles inferiores para interactuar */
+        .controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            background-color: #161b22;
+            color: #c9d1d9;
+            font-size: 1rem;
+        }
+        button {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            background-color: #238636;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #2ea043;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="face-container" id="face">
+        <div class="eyes">
+            <div class="eye"></div>
+            <div class="eye"></div>
+        </div>
+        <div class="mouth"></div>
+    </div>
+
+    <div id="status-text">Sistemas en línea. ¿Qué deseas hacer?</div>
+
+    <div class="controls">
+        <input type="text" id="user-input" placeholder="Escribe algo a Visión..." autocomplete="off">
+        <button onclick="enviarMensaje()">Enviar</button>
+    </div>
+
+    <script>
+        async function enviarMensaje() {
+            const input = document.getElementById('user-input');
+            const statusText = document.getElementById('status-text');
+            const face = document.getElementById('face');
+            
+            const mensaje = input.value.trim();
+            if (!mensaje) return;
+
+            // Cambiar a estado "pensando" mientras consulta a Gemini
+            face.className = "face-container thinking";
+            statusText.innerText = "Pensando...";
+            input.value = "";
+
+            try {
+                // Hacemos la petición a nuestra ruta en Flask
+                const response = await fetch(`/hablar/${encodeURIComponent(mensaje)}`);
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    // Aplicar la emoción devuelta por el servidor
+                    face.className = "face-container " + data.emocion;
+                    statusText.innerText = data.respuesta;
+                } else {
+                    face.className = "face-container";
+                    statusText.innerText = "Error: " + data.mensaje;
+                }
+            } catch (error) {
+                face.className = "face-container";
+                statusText.innerText = "Error de conexión con el servidor.";
+            }
+        }
+
+        // Permitir enviar con la tecla Enter
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                enviarMensaje();
+            }
+        });
+    </script>
+</body>
+</html>
