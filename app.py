@@ -15,6 +15,14 @@ ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 # ID de voz estilo JARVIS (George - Cálido, británico y elegante)
 VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
 
+# Historial de conversación para mantener la memoria del chat
+historial_conversacion = [
+    {
+        "role": "system",
+        "content": "Eres Visión, un asistente virtual avanzado, sofisticado y elegante al estilo de JARVIS. Responde de forma breve, distinguida y natural."
+    }
+]
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -57,7 +65,6 @@ def generar_voz_elevenlabs(texto):
 def obtener_clima():
     """Consulta el clima actual en tiempo real de forma gratuita."""
     try:
-        # Pide un formato limpio de texto breve a wttr.in
         response = requests.get("https://wttr.in/?format=3", timeout=5)
         if response.status_code == 200:
             return response.text.strip()
@@ -67,7 +74,8 @@ def obtener_clima():
 
 @app.route('/hablar/<mensaje>', methods=['GET'])
 def hablar(mensaje):
-    """Envía un mensaje a Groq y genera su voz HD con ElevenLabs."""
+    """Envía un mensaje a Groq con memoria de chat y genera su voz HD con ElevenLabs."""
+    global historial_conversacion
     try:
         print(f"--> Mensaje enviado a Groq: {mensaje}")
         mensaje_lower = mensaje.lower()
@@ -86,23 +94,23 @@ def hablar(mensaje):
             clima_actual = obtener_clima()
             contexto_extra = f"[Información del sistema: El reporte meteorológico actual es {clima_actual}]."
 
-        # Preparar prompt del sistema con el contexto adicional si aplica
-        prompt_sistema = "Eres Visión, un asistente virtual avanzado, sofisticado y elegante al estilo de JARVIS. Responde de forma breve, distinguida y natural."
+        # Creamos una lista temporal para enviar el historial más el nuevo mensaje y contexto
+        mensajes_para_enviar = list(historial_conversacion)
+        
         if contexto_extra:
-            prompt_sistema += f" Ten en cuenta este dato para responder: {contexto_extra}"
+            mensajes_para_enviar.append({
+                "role": "system",
+                "content": contexto_extra
+            })
+
+        mensajes_para_enviar.append({
+            "role": "user",
+            "content": mensaje
+        })
 
         completion = groq_client.chat.completions.create(
             model="openai/gpt-oss-20b",
-            messages=[
-                {
-                    "role": "system",
-                    "content": prompt_sistema
-                },
-                {
-                    "role": "user",
-                    "content": mensaje
-                }
-            ],
+            messages=mensajes_para_enviar,
             temperature=0.7,
             max_tokens=150
         )
@@ -110,6 +118,14 @@ def hablar(mensaje):
         texto_respuesta = completion.choices[0].message.content
         print(f"<-- Respuesta de Groq: {texto_respuesta}")
         
+        # Guardamos el intercambio en la memoria permanente del servidor
+        historial_conversacion.append({"role": "user", "content": mensaje})
+        historial_conversacion.append({"role": "assistant", "content": texto_respuesta})
+        
+        # Opcional: Limitar el historial para evitar desbordar el límite de tokens (mantiene el prompt de sistema + últimos 20 mensajes)
+        if len(historial_conversacion) > 21:
+            historial_conversacion = [historial_conversacion[0]] + historial_conversacion[-20:]
+
         # Determinación de estados emocionales para la interfaz visual
         emocion = "neutral"
         texto_lower = texto_respuesta.lower()
