@@ -15,11 +15,16 @@ ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 # ID de voz estilo JARVIS (George - Cálido, británico y elegante)
 VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
 
-# Historial de conversación para mantener la memoria del chat
+# Historial de conversación para mantener la memoria del chat (con tolerancia a errores ortográficos)
 historial_conversacion = [
     {
         "role": "system",
-        "content": "Eres Visión, un asistente virtual avanzado, sofisticado y elegante al estilo de JARVIS. Responde de forma breve, distinguida y natural."
+        "content": (
+            "Eres Visión, un asistente virtual avanzado, sofisticado y elegante al estilo de JARVIS. "
+            "Responde de forma breve, distinguida y natural. "
+            "IMPORTANTE: El usuario puede escribir de forma rápida o con errores ortográficos y faltas de tipeo; "
+            "debes ignorar esos errores, interpretar su intención subyacente y responder como si estuviera perfectamente escrito."
+        )
     }
 ]
 
@@ -56,7 +61,7 @@ def generar_voz_elevenlabs(texto):
                 f.write(response.content)
             return "/static/audio_respuesta.mp3"
         else:
-            print(f"[ERROR ELEVENLABS]: {response.status_code} - {response.text}")
+            print(f"[ERROR ELEVENLABS]: {response.status_code}\n{response.text}")
             return None
     except Exception as e:
         print(f"[EXCEPCIÓN ELEVENLABS]: {e}")

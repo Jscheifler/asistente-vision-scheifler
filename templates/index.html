@@ -99,7 +99,7 @@
 
         .controls {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
             max-width: 450px;
         }
@@ -116,7 +116,7 @@
         }
 
         button {
-            padding: 14px 22px;
+            padding: 14px 18px;
             border-radius: 12px;
             border: none;
             background-color: #0284c7;
@@ -124,6 +124,26 @@
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #0369a1;
+        }
+
+        button#mic-btn {
+            background-color: #334155;
+        }
+
+        button#mic-btn.listening {
+            background-color: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
     </style>
 </head>
@@ -137,10 +157,11 @@
         <div class="mouth"></div>
     </div>
 
-    <div id="status-text">Sistema Visión en línea. ¿Qué orden deseas, señor?</div>
+    <div id="status-text">Sistemas JARVIS en línea. ¿Qué orden deseas, señor?</div>
 
     <div class="controls">
-        <input type="text" id="user-input" placeholder="Escribe a Visión..." autocomplete="off">
+        <button id="mic-btn" onclick="activarEscucha()" title="Hablar con Visión">🎤</button>
+        <input type="text" id="user-input" placeholder="Escribe o habla a Visión..." autocomplete="off">
         <button onclick="enviarMensaje()">Enviar</button>
     </div>
 
@@ -148,18 +169,67 @@
     <audio id="audio-player"></audio>
 
     <script>
+        const statusText = document.getElementById('status-text');
+        const face = document.getElementById('face');
+        const audioPlayer = document.getElementById('audio-player');
+        const micBtn = document.getElementById('mic-btn');
+        const userInput = document.getElementById('user-input');
+
+        // Configuración del Reconocimiento de Voz del Navegador
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function() {
+                micBtn.classList.add('listening');
+                statusText.innerText = "Escuchando orden...";
+                face.className = "face-container thinking";
+            };
+
+            recognition.onresult = function(event) {
+                const textoTranscrito = event.results[0][0].transcript;
+                userInput.value = textoTranscrito;
+                enviarMensaje(); // Envía automáticamente al terminar de hablar
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Error de voz:", event.error);
+                statusText.innerText = "No pude escuchar bien. Intenta de nuevo.";
+                face.className = "face-container";
+                micBtn.classList.remove('listening');
+            };
+
+            recognition.onend = function() {
+                micBtn.classList.remove('listening');
+            };
+        } else {
+            console.warn("El reconocimiento de voz no es compatible con este navegador.");
+        }
+
+        function activarEscucha() {
+            if (recognition) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    recognition.stop();
+                }
+            } else {
+                alert("Tu navegador no soporta reconocimiento de voz nativo.");
+            }
+        }
+
         async function enviarMensaje() {
-            const input = document.getElementById('user-input');
-            const statusText = document.getElementById('status-text');
-            const face = document.getElementById('face');
-            const audioPlayer = document.getElementById('audio-player');
-            
-            const mensaje = input.value.trim();
+            const mensaje = userInput.value.trim();
             if (!mensaje) return;
 
             face.className = "face-container thinking";
             statusText.innerText = "Analizando...";
-            input.value = "";
+            userInput.value = "";
 
             try {
                 const response = await fetch(`/hablar/${encodeURIComponent(mensaje)}`);
@@ -169,9 +239,8 @@
                     face.className = "face-container " + data.emocion;
                     statusText.innerText = data.respuesta;
 
-                    // Reproduce el audio generado por ElevenLabs desde Flask
                     if (data.audio_url) {
-                        audioPlayer.src = data.audio_url + "?t=" + new Date().getTime(); // Evita caché
+                        audioPlayer.src = data.audio_url + "?t=" + new Date().getTime();
                         audioPlayer.play().catch(e => console.log("Error al reproducir audio:", e));
                     }
                 } else {
@@ -184,7 +253,7 @@
             }
         }
 
-        document.getElementById('user-input').addEventListener('keypress', function (e) {
+        userInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 enviarMensaje();
             }
