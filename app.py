@@ -18,7 +18,7 @@ def hablar(mensaje):
         print(f"--> Mensaje enviado a Groq: {mensaje}")
         
         completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             messages=[
                 {
                     "role": "system",
