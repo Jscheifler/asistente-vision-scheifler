@@ -167,7 +167,7 @@
         <div class="mouth"></div>
     </div>
 
-    <div id="status-text">Sistemas en línea. ¡Hola, ya tengo voz propia!</div>
+    <div id="status-text">Sistemas en línea. ¡Hola, ya tengo voz propia y animación fluida!</div>
 
     <div class="controls">
         <input type="text" id="user-input" placeholder="Escribe algo a Visión..." autocomplete="off">
@@ -175,18 +175,17 @@
     </div>
 
     <script>
-        // Función corregida sin espacios en el nombre
         function hablarEnVozAlta(texto) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
 
                 const utterance = new SpeechSynthesisUtterance(texto);
                 utterance.lang = 'es-ES';
-                utterance.rate = 1.0;
+                utterance.rate = 1.1;
                 utterance.pitch = 1.0;
 
                 const voices = window.speechSynthesis.getVoices();
-                const spanishVoice = voices.find(v => v.lang.startsWith('es'));
+                const spanishVoice = voices.find(v => v.lang && v.lang.startsWith('es'));
                 if (spanishVoice) {
                     utterance.voice = spanishVoice;
                 }
@@ -203,7 +202,6 @@
             const mensaje = input.value.trim();
             if (!mensaje) return;
 
-            // Cambiar a estado "pensando"
             face.className = "face-container thinking";
             statusText.innerText = "Pensando...";
             input.value = "";
