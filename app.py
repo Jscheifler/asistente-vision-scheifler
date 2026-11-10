@@ -1,4 +1,5 @@
 import os
+import datetime
 import requests
 from flask import Flask, render_template, jsonify
 from groq import Groq
@@ -58,13 +59,33 @@ def hablar(mensaje):
     """Envía un mensaje a Groq y genera su voz HD con ElevenLabs."""
     try:
         print(f"--> Mensaje enviado a Groq: {mensaje}")
+        mensaje_lower = mensaje.lower()
         
+        # --- HERRAMIENTAS LOCALES (HORA, FECHA, CLIMA) ---
+        contexto_extra = ""
+        now = datetime.datetime.now()
+        
+        if "hora" in mensaje_lower:
+            hora_actual = now.strftime("%H:%M")
+            contexto_extra = f"[Información del sistema: La hora actual es {hora_actual}]."
+        elif "fecha" in mensaje_lower or "día" in mensaje_lower:
+            fecha_actual = now.strftime("%A, %d de %B de %Y")
+            contexto_extra = f"[Información del sistema: La fecha de hoy es {fecha_actual}]."
+        elif "clima" in mensaje_lower or "tiempo" in mensaje_lower:
+            # Aquí puedes conectar luego una API del clima si lo deseas; por ahora le damos un contexto base
+            contexto_extra = f"[Información del sistema: Los sistemas meteorológicos indican condiciones estables para el día de hoy]."
+
+        # Preparar prompt del sistema con el contexto adicional si aplica
+        prompt_sistema = "Eres Visión, un asistente virtual avanzado, sofisticado y elegante al estilo de JARVIS. Responde de forma breve, distinguida y natural."
+        if contexto_extra:
+            prompt_sistema += f" Ten en cuenta este dato para responder: {contexto_extra}"
+
         completion = groq_client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[
                 {
                     "role": "system",
-                    "content": "Eres Visión, un asistente virtual avanzado, sofisticado y elegante al estilo de JARVIS. Responde de forma breve, distinguida y natural."
+                    "content": prompt_sistema
                 },
                 {
                     "role": "user",
