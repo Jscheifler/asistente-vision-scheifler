@@ -54,6 +54,17 @@ def generar_voz_elevenlabs(texto):
         print(f"[EXCEPCIÓN ELEVENLABS]: {e}")
         return None
 
+def obtener_clima():
+    """Consulta el clima actual en tiempo real de forma gratuita."""
+    try:
+        # Pide un formato limpio de texto breve a wttr.in
+        response = requests.get("https://wttr.in/?format=3", timeout=5)
+        if response.status_code == 200:
+            return response.text.strip()
+    except Exception as e:
+        print(f"[ERROR CLIMA]: {e}")
+    return "condiciones estables"
+
 @app.route('/hablar/<mensaje>', methods=['GET'])
 def hablar(mensaje):
     """Envía un mensaje a Groq y genera su voz HD con ElevenLabs."""
@@ -72,8 +83,8 @@ def hablar(mensaje):
             fecha_actual = now.strftime("%A, %d de %B de %Y")
             contexto_extra = f"[Información del sistema: La fecha de hoy es {fecha_actual}]."
         elif "clima" in mensaje_lower or "tiempo" in mensaje_lower:
-            # Aquí puedes conectar luego una API del clima si lo deseas; por ahora le damos un contexto base
-            contexto_extra = f"[Información del sistema: Los sistemas meteorológicos indican condiciones estables para el día de hoy]."
+            clima_actual = obtener_clima()
+            contexto_extra = f"[Información del sistema: El reporte meteorológico actual es {clima_actual}]."
 
         # Preparar prompt del sistema con el contexto adicional si aplica
         prompt_sistema = "Eres Visión, un asistente virtual avanzado, sofisticado y elegante al estilo de JARVIS. Responde de forma breve, distinguida y natural."
