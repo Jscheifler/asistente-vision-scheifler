@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente Visión - Interfaz</title>
+    <title>Visión - Asistente Inteligente</title>
     <style>
         body {
-            background-color: #0d1117;
+            background-color: #0b0f19;
             color: #c9d1d9;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -19,6 +19,7 @@
             padding: 20px;
             box-sizing: border-box;
         }
+
         /* Contenedor principal de la cara */
         .face-container {
             display: flex;
@@ -27,89 +28,132 @@
             justify-content: center;
             margin-top: auto;
             margin-bottom: auto;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         /* Ojos del asistente */
         .eyes {
             display: flex;
-            gap: 40px;
-            margin-bottom: 30px;
+            gap: 50px;
+            margin-bottom: 35px;
         }
+
         .eye {
-            width: 40px;
-            height: 40px;
-            background-color: #58a6ff;
+            width: 45px;
+            height: 45px;
+            background-color: #38bdf8;
             border-radius: 50%;
-            box-shadow: 0 0 15px #58a6ff;
-            transition: transform 0.2s ease, background-color 0.3s ease;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+            transition: transform 0.3s ease, background-color 0.4s ease, box-shadow 0.4s ease;
         }
+
+        /* Animación de parpadeo automático */
+        @keyframes blink {
+            0%, 96%, 100% { transform: scaleY(1); }
+            98% { transform: scaleY(0.1); }
+        }
+
+        .face-container:not(.thinking):not(.happy) .eye {
+            animation: blink 4s infinite;
+        }
+
         /* Boca / Indicador de estado */
         .mouth {
-            width: 80px;
-            height: 10px;
-            background-color: #58a6ff;
-            border-radius: 5px;
-            box-shadow: 0 0 10px #58a6ff;
-            transition: all 0.3s ease;
+            width: 90px;
+            height: 12px;
+            background-color: #38bdf8;
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Estados emocionales (Clases CSS) */
+
+        /* --- ESTADOS EMOCIONALES --- */
+        
+        /* Estado Pensando */
         .thinking .eye {
-            transform: scaleY(0.3);
-            background-color: #d29922;
-            box-shadow: 0 0 15px #d29922;
+            transform: scaleY(0.25);
+            background-color: #facc15;
+            box-shadow: 0 0 25px rgba(250, 204, 21, 0.7);
         }
         .thinking .mouth {
-            width: 30px;
+            width: 35px;
+            height: 8px;
             border-radius: 50%;
+            background-color: #facc15;
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.5);
+            animation: pulse-mouth 1s infinite alternate;
         }
+
+        @keyframes pulse-mouth {
+            0% { transform: scale(0.9); }
+            100% { transform: scale(1.1); }
+        }
+
+        /* Estado Feliz / Alegre */
         .happy .eye {
-            transform: scale(1.2);
-            background-color: #3fb950;
-            box-shadow: 0 0 20px #3fb950;
+            transform: scale(1.15) scaleY(0.9);
+            background-color: #4ade80;
+            box-shadow: 0 0 30px rgba(74, 222, 128, 0.8);
         }
         .happy .mouth {
-            width: 100px;
-            height: 20px;
-            border-radius: 0 0 50px 50px;
+            width: 110px;
+            height: 24px;
+            border-radius: 0 0 60px 60px;
+            background-color: #4ade80;
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
         }
+
         /* Texto de estado inferior */
         #status-text {
             margin-top: 20px;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             text-align: center;
             max-width: 90%;
-            color: #8b949e;
-            min-height: 50px;
+            color: #94a3b8;
+            min-height: 60px;
+            line-height: 1.5;
         }
+
         /* Controles inferiores para interactuar */
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             margin-bottom: 10px;
         }
+
         input[type="text"] {
             flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #30363d;
-            background-color: #161b22;
-            color: #c9d1d9;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid #1e293b;
+            background-color: #0f172a;
+            color: #f1f5f9;
             font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
         }
+
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+        }
+
         button {
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 14px 22px;
+            border-radius: 12px;
             border: none;
-            background-color: #238636;
+            background-color: #0284c7;
             color: white;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
         }
+
         button:active {
-            background-color: #2ea043;
+            background-color: #0369a1;
+            transform: scale(0.97);
         }
     </style>
 </head>
@@ -123,7 +167,7 @@
         <div class="mouth"></div>
     </div>
 
-    <div id="status-text">Sistemas en línea. ¿Qué deseas hacer?</div>
+    <div id="status-text">Sistemas en línea. Hola, ¿en qué te puedo ayudar?</div>
 
     <div class="controls">
         <input type="text" id="user-input" placeholder="Escribe algo a Visión..." autocomplete="off">
@@ -139,18 +183,18 @@
             const mensaje = input.value.trim();
             if (!mensaje) return;
 
-            // Cambiar a estado "pensando" mientras consulta a Gemini
+            // Cambiar a estado "pensando" (ojos amarillos y animación)
             face.className = "face-container thinking";
             statusText.innerText = "Pensando...";
             input.value = "";
 
             try {
-                // Hacemos la petición a nuestra ruta en Flask
+                // Petición al servidor Flask local
                 const response = await fetch(`/hablar/${encodeURIComponent(mensaje)}`);
                 const data = await response.json();
 
                 if (data.status === "success") {
-                    // Aplicar la emoción devuelta por el servidor
+                    // Aplicar la emoción devuelta (neutral, happy, etc.)
                     face.className = "face-container " + data.emocion;
                     statusText.innerText = data.respuesta;
                 } else {
@@ -163,7 +207,7 @@
             }
         }
 
-        // Permitir enviar con la tecla Enter
+        // Enviar mensaje presionando Enter
         document.getElementById('user-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 enviarMensaje();
