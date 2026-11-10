@@ -175,18 +175,16 @@
     </div>
 
     <script>
-        // Función para sintetizar la voz de Visión en español
-        function hablarEnVoz Alta(texto) {
+        // Función corregida sin espacios en el nombre
+        function hablarEnVozAlta(texto) {
             if ('speechSynthesis' in window) {
-                // Cancelar cualquier audio anterior para que no se encime
                 window.speechSynthesis.cancel();
 
                 const utterance = new SpeechSynthesisUtterance(texto);
-                utterance.lang = 'es-ES'; // Idioma español
-                utterance.rate = 1.0;    // Velocidad normal
-                utterance.pitch = 1.0;   // Tono
+                utterance.lang = 'es-ES';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
 
-                // Intentar buscar una voz en español natural si está disponible en el dispositivo
                 const voices = window.speechSynthesis.getVoices();
                 const spanishVoice = voices.find(v => v.lang.startsWith('es'));
                 if (spanishVoice) {
@@ -211,16 +209,12 @@
             input.value = "";
 
             try {
-                // Petición al servidor Flask local
                 const response = await fetch(`/hablar/${encodeURIComponent(mensaje)}`);
                 const data = await response.json();
 
                 if (data.status === "success") {
-                    // Aplicar la emoción devuelta
                     face.className = "face-container " + data.emocion;
                     statusText.innerText = data.respuesta;
-                    
-                    // ¡Hacer que Visión hable la respuesta en voz alta!
                     hablarEnVozAlta(data.respuesta);
                 } else {
                     face.className = "face-container";
@@ -232,7 +226,6 @@
             }
         }
 
-        // Enviar mensaje presionando Enter
         document.getElementById('user-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 enviarMensaje();
