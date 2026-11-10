@@ -68,8 +68,6 @@
         }
 
         /* --- ESTADOS EMOCIONALES --- */
-        
-        /* Estado Pensando */
         .thinking .eye {
             transform: scaleY(0.25);
             background-color: #facc15;
@@ -89,7 +87,6 @@
             100% { transform: scale(1.1); }
         }
 
-        /* Estado Feliz / Alegre */
         .happy .eye {
             transform: scale(1.15) scaleY(0.9);
             background-color: #4ade80;
@@ -103,24 +100,44 @@
             box-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
         }
 
+        /* Selector de voz superior */
+        .voice-selector {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background-color: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
         /* Texto de estado inferior */
         #status-text {
-            margin-top: 20px;
-            font-size: 1.15rem;
+            margin-top: 15px;
+            font-size: 1.1rem;
             text-align: center;
             max-width: 90%;
             color: #94a3b8;
-            min-height: 60px;
-            line-height: 1.5;
+            min-height: 50px;
+            line-height: 1.4;
         }
 
-        /* Controles inferiores para interactuar */
+        /* Controles inferiores */
         .controls {
             display: flex;
             gap: 12px;
             width: 100%;
             max-width: 450px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         input[type="text"] {
@@ -159,6 +176,13 @@
 </head>
 <body>
 
+    <!-- Menú desplegable para elegir la voz -->
+    <div class="voice-selector">
+        <select id="voiceSelect" onchange="probarVoz()">
+            <option value="">Cargando voces del dispositivo...</option>
+        </select>
+    </div>
+
     <div class="face-container" id="face">
         <div class="eyes">
             <div class="eye"></div>
@@ -167,7 +191,7 @@
         <div class="mouth"></div>
     </div>
 
-    <div id="status-text">Sistemas en línea. ¡Hola, ya tengo voz propia y animación fluida!</div>
+    <div id="status-text">Sistemas en línea. ¡Selecciona una voz y háblame!</div>
 
     <div class="controls">
         <input type="text" id="user-input" placeholder="Escribe algo a Visión..." autocomplete="off">
@@ -175,19 +199,62 @@
     </div>
 
     <script>
+        let vocesDisponibles = [];
+
+        // Cargar y listar las voces en el selector
+        function cargarVoces() {
+            if (!('speechSynthesis' in window)) return;
+            
+            vocesDisponibles = window.speechSynthesis.getVoices();
+            const select = document.getElementById('voiceSelect');
+            select.innerHTML = '';
+
+            // Filtrar preferentemente voces en español, o mostrar todas si hay pocas
+            const vocesFiltradas = vocesDisponibles.filter(v => v.lang.includes('es') || v.lang.includes('en'));
+            const listaUsar = vocesFiltradas.length > 0 ? vocesFiltradas : vocesDisponibles;
+
+            listaUsar.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = vocesDisponibles.indexOf(voice); // Guardamos el índice real
+                option.textContent = `${voice.name} (${voice.lang})`;
+                select.appendChild(option);
+            });
+        }
+
+        // Evento para cuando Android/Chrome carga las voces
+        window.speechSynthesis.onvoiceschanged = cargarVoces;
+        setTimeout(cargarVoces, 500); // Por si ya cargaron
+
+        // Probar la voz seleccionada al cambiarla en el menú
+        function probarVoz() {
+            const select = document.getElementById('voiceSelect');
+            const index = select.value;
+            if (index === "" || !vocesDisponibles[index]) return;
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance("Hola, esta es mi nueva voz.");
+            utterance.voice = vocesDisponibles[index];
+            utterance.lang = vocesDisponibles[index].lang;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Hablar con la voz seleccionada en el menú
         function hablarEnVozAlta(texto) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
 
                 const utterance = new SpeechSynthesisUtterance(texto);
-                utterance.lang = 'es-ES';
                 utterance.rate = 1.1;
                 utterance.pitch = 1.0;
 
-                const voices = window.speechSynthesis.getVoices();
-                const spanishVoice = voices.find(v => v.lang && v.lang.startsWith('es'));
-                if (spanishVoice) {
-                    utterance.voice = spanishVoice;
+                const select = document.getElementById('voiceSelect');
+                const index = select.value;
+
+                if (index !== "" && vocesDisponibles[index]) {
+                    utterance.voice = vocesDisponibles[index];
+                    utterance.lang = vocesDisponibles[index].lang;
+                } else {
+                    utterance.lang = 'es-ES';
                 }
 
                 window.speechSynthesis.speak(utterance);
@@ -219,7 +286,7 @@
                     statusText.innerText = "Error: " + data.mensaje;
                 }
             } catch (error) {
-                face.className = "face-container";
+                face.className.("face-container");
                 statusText.innerText = "Error de conexión con el servidor.";
             }
         }
